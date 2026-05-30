@@ -1,11 +1,9 @@
-const readExpenses = require("../utils/readExpenses");
+const pool = require("../../db");
 
-function summary() {
-  const expenses = readExpenses();
+async function summary() {
+  const result = await pool.query("SELECT SUM(amount) as total FROM expenses");
 
-  const total = expenses.reduce((sum, expense) => {
-    return sum + expense.amount;
-  }, 0);
+  const total = parseFloat(result.rows[0].total) || 0;
 
   console.log(`Total expenses: $${total}`);
 }

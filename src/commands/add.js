@@ -1,9 +1,8 @@
-const readExpenses = require("../utils/readExpenses");
-const saveExpenses = require("../utils/saveExpenses");
+const pool = require("../../db");
 const getArgValue = require("../utils/getArgValue");
 const readBudgets = require("../utils/readBudget");
 
-function add() {
+async function add() {
   const description = getArgValue("--description");
   const amount = getArgValue("--amount");
   const category = getArgValue("--category");
@@ -30,44 +29,33 @@ function add() {
     return;
   }
 
-  const expenses = readExpenses();
-  const lastExpense = expenses[expenses.length - 1];
-  const newId = lastExpense ? lastExpense.id + 1 : 1;
+  const date = new Date().toISOString().split("T")[0];
+  const currentMonth = new Date(date).getMonth() + 1;
 
-  const newExpense = {
-    id: newId,
-    date: new Date().toISOString().split("T")[0],
-    description,
-    amount: numericAmount,
-    category,
-  };
-  const budgets = readBudgets();
-
-  const currentMonth = new Date(newExpense.date).getMonth() + 1;
+  const budgets = await readBudgets();
 
   const budget = budgets.find((budget) => {
     return budget.month === currentMonth;
   });
 
   if (budget) {
-    const totalForMonth = expenses
-      .filter((expense) => {
-        const expenseMonth = new Date(expense.date).getMonth() + 1;
-        return expenseMonth === currentMonth;
-      })
-      .reduce((sum, expense) => {
-        return sum + expense.amount;
-      }, 0);
+    const expensesResult = await pool.query(
+      "SELECT SUM(amount) as total FROM expenses WHERE EXTRACT(MONTH FROM date) = $1",
+      [currentMonth]
+    );
+    const totalForMonth = parseFloat(expensesResult.rows[0].total) || 0;
 
-    if (totalForMonth > budget.amount) {
+    if (totalForMonth + numericAmount > budget.amount) {
       console.log("Warning: Budget exceeded!");
     }
   }
-  expenses.push(newExpense);
 
-  saveExpenses(expenses);
+  const result = await pool.query(
+    "INSERT INTO expenses (date, description, amount, category) VALUES ($1, $2, $3, $4) RETURNING id",
+    [date, description, numericAmount, category]
+  );
 
-  console.log(`Expense added successfully (ID: ${newExpense.id})`);
+  console.log(`Expense added successfully (ID: ${result.rows[0].id})`);
 }
 
 module.exports = add;

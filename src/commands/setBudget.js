@@ -1,8 +1,7 @@
+const pool = require("../../db");
 const getArgValue = require("../utils/getArgValue");
-const readBudgets = require("../utils/readBudget");
-const saveBudgets = require("../utils/saveBudget");
 
-function setBudget() {
+async function setBudget() {
   const month = getArgValue("--month");
   const amount = getArgValue("--amount");
 
@@ -29,37 +28,12 @@ function setBudget() {
     return;
   }
 
-  const budgets = readBudgets();
-
-  const existingBudget = budgets.find((budget) => {
-    return budget.month === numericMonth;
-  });
-
-  let updatedBudgets;
-
-  if (existingBudget) {
-    updatedBudgets = budgets.map((budget) => {
-      if (budget.month !== numericMonth) {
-        return budget;
-      }
-
-      return {
-        ...budget,
-        amount: numericAmount,
-      };
-    });
-  } else {
-    updatedBudgets = [
-      ...budgets,
-      {
-        month: numericMonth,
-        amount: numericAmount,
-      },
-    ];
-  }
-
-  saveBudgets(updatedBudgets);
+  await pool.query(
+    "INSERT INTO budgets (month, amount) VALUES ($1, $2) ON CONFLICT (month) DO UPDATE SET amount = $2",
+    [numericMonth, numericAmount]
+  );
 
   console.log("Budget saved successfully");
 }
+
 module.exports = setBudget;

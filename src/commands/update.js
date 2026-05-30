@@ -1,8 +1,7 @@
-const readExpenses = require("../utils/readExpenses");
-const saveExpenses = require("../utils/saveExpenses");
+const pool = require("../../db");
 const getArgValue = require("../utils/getArgValue");
 
-function update() {
+async function update() {
   const id = getArgValue("--id");
 
   if (!id) {
@@ -13,31 +12,27 @@ function update() {
   const numericId = Number(id);
 
   const description = getArgValue("--description");
-
   const amount = getArgValue("--amount");
 
-  const expenses = readExpenses();
+  const checkResult = await pool.query(
+    "SELECT * FROM expenses WHERE id = $1",
+    [numericId]
+  );
 
-  const expense = expenses.find((expense) => expense.id === numericId);
-
-  if (!expense) {
+  if (checkResult.rows.length === 0) {
     console.log("Expense not found");
     return;
   }
 
-  const updatedExpenses = expenses.map((expense) => {
-    if (expense.id !== numericId) {
-      return expense;
-    }
+  const expense = checkResult.rows[0];
 
-    return {
-      ...expense,
-      description: description ? description : expense.description,
-      amount: amount ? Number(amount) : expense.amount,
-    };
-  });
+  const newDescription = description ? description : expense.description;
+  const newAmount = amount ? Number(amount) : expense.amount;
 
-  saveExpenses(updatedExpenses);
+  await pool.query(
+    "UPDATE expenses SET description = $1, amount = $2 WHERE id = $3",
+    [newDescription, newAmount, numericId]
+  );
 
   console.log("Expense updated successfully");
 }

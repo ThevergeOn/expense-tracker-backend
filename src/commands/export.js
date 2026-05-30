@@ -1,8 +1,8 @@
 const fs = require("fs");
 const readExpenses = require("../utils/readExpenses");
 
-function exportCSV() {
-  const expenses = readExpenses();
+async function exportCSV() {
+  const expenses = await readExpenses();
 
   if (expenses.length === 0) {
     console.log("No expenses to export");
@@ -12,7 +12,10 @@ function exportCSV() {
   const header = "ID,Date,Category,Description,Amount";
 
   const rows = expenses.map((expense) => {
-    return `${expense.id},${expense.date},${expense.category},${expense.description},${expense.amount}`;
+    const dateStr = expense.date instanceof Date
+      ? expense.date.toISOString().split("T")[0]
+      : expense.date;
+    return `${expense.id},${dateStr},${expense.category},${expense.description},${expense.amount}`;
   });
 
   const csv = [header, ...rows].join("\n");
@@ -21,4 +24,5 @@ function exportCSV() {
 
   console.log("Expenses exported successfully");
 }
+
 module.exports = exportCSV;

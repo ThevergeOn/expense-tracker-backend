@@ -1,8 +1,8 @@
-const fs = require("fs");
+const pool = require("../../db");
 
-function readBudgets() {
-  const data = fs.readFileSync("budgets.json", "utf8");
-
-  return JSON.parse(data);
+async function readBudgets() {
+  const result = await pool.query("SELECT * FROM budgets ORDER BY month");
+  return result.rows;
 }
+
 module.exports = readBudgets;

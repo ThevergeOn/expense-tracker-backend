@@ -1,8 +1,7 @@
-const readExpenses = require("../utils/readExpenses");
-const saveExpenses = require("../utils/saveExpenses");
+const pool = require("../../db");
 const getArgValue = require("../utils/getArgValue");
 
-function deleteExpense() {
+async function deleteExpense() {
   const id = getArgValue("--id");
 
   if (!id) {
@@ -12,20 +11,17 @@ function deleteExpense() {
 
   const numericId = Number(id);
 
-  const expenses = readExpenses();
+  const checkResult = await pool.query(
+    "SELECT * FROM expenses WHERE id = $1",
+    [numericId]
+  );
 
-  const expense = expenses.find((expense) => expense.id === numericId);
-
-  if (!expense) {
+  if (checkResult.rows.length === 0) {
     console.log("Expense not found");
     return;
   }
 
-  const updatedExpenses = expenses.filter(
-    (expense) => expense.id !== numericId
-  );
-
-  saveExpenses(updatedExpenses);
+  await pool.query("DELETE FROM expenses WHERE id = $1", [numericId]);
 
   console.log("Expense deleted successfully");
 }

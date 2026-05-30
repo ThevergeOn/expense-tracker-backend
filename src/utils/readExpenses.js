@@ -1,11 +1,8 @@
-const fs = require("fs");
-const path = require("path");
+const pool = require("../../db");
 
-const expensesPath = path.join(__dirname, "../../expenses.json");
-
-function readExpenses() {
-  const data = fs.readFileSync(expensesPath, "utf8");
-  return JSON.parse(data);
+async function readExpenses() {
+  const result = await pool.query("SELECT * FROM expenses ORDER BY id");
+  return result.rows;
 }
 
 module.exports = readExpenses;

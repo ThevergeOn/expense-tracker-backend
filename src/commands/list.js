@@ -1,27 +1,34 @@
-const readExpenses = require("../utils/readExpenses");
+const pool = require("../../db");
 const getArgValue = require("../utils/getArgValue");
-function list() {
-  const expenses = readExpenses();
+
+async function list() {
   const category = getArgValue("--category");
 
-  let filteredExpenses = expenses;
-
+  let result;
   if (category) {
-    filteredExpenses = expenses.filter((expense) => {
-      return expense.category === category;
-    });
+    result = await pool.query(
+      "SELECT * FROM expenses WHERE category = $1 ORDER BY id",
+      [category]
+    );
+  } else {
+    result = await pool.query("SELECT * FROM expenses ORDER BY id");
   }
 
-  if (filteredExpenses.length === 0) {
+  const expenses = result.rows;
+
+  if (expenses.length === 0) {
     console.log("No expenses found");
     return;
   }
 
   console.log("ID  Date        Category  Description  Amount");
 
-  filteredExpenses.forEach((expense) => {
+  expenses.forEach((expense) => {
+    const dateStr = expense.date instanceof Date
+      ? expense.date.toISOString().split("T")[0]
+      : expense.date;
     console.log(
-      `${expense.id}   ${expense.date}  ${expense.category}  ${expense.description}  $${expense.amount}`,
+      `${expense.id}   ${dateStr}  ${expense.category}  ${expense.description}  $${expense.amount}`,
     );
   });
 }
