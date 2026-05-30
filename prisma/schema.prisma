@@ -27,3 +27,29 @@ model Budget {
 
   @@map("budgets")
 }
+
+model User {
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String          @unique
+  phone          String?
+  avatar         String?
+  currency       String          @default("USD")
+  language       String          @default("en")
+  notifications  Boolean         @default(true)
+  paymentMethods PaymentMethod[]
+
+  @@map("users")
+}
+
+model PaymentMethod {
+  id        Int     @id @default(autoincrement())
+  type      String
+  last4     String
+  expiry    String
+  isDefault Boolean @default(false)
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
