@@ -8,8 +8,8 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev
+# Install all dependencies (needed for prisma generate)
+RUN npm ci
 
 # Copy prisma schema
 COPY prisma ./prisma/
