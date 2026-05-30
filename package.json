@@ -5,8 +5,12 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "cli": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:setup": "node src/setup-db.js",
+    "db:generate": "npx prisma generate",
+    "test": "echo \"No tests configured yet\" && exit 0",
+    "lint": "echo \"No linting configured yet\" && exit 0"
   },
   "keywords": [],
   "author": "",
