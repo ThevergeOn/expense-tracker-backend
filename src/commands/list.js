@@ -1,18 +1,27 @@
 const readExpenses = require("../utils/readExpenses");
-
+const getArgValue = require("../utils/getArgValue");
 function list() {
   const expenses = readExpenses();
+  const category = getArgValue("--category");
 
-  if (expenses.length === 0) {
+  let filteredExpenses = expenses;
+
+  if (category) {
+    filteredExpenses = expenses.filter((expense) => {
+      return expense.category === category;
+    });
+  }
+
+  if (filteredExpenses.length === 0) {
     console.log("No expenses found");
     return;
   }
 
-  console.log("ID  Date        Description  Amount");
+  console.log("ID  Date        Category  Description  Amount");
 
-  expenses.forEach((expense) => {
+  filteredExpenses.forEach((expense) => {
     console.log(
-      `${expense.id}   ${expense.date}  ${expense.description}        $${expense.amount}`
+      `${expense.id}   ${expense.date}  ${expense.category}  ${expense.description}  $${expense.amount}`,
     );
   });
 }

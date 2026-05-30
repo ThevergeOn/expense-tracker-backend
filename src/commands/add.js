@@ -1,10 +1,12 @@
 const readExpenses = require("../utils/readExpenses");
 const saveExpenses = require("../utils/saveExpenses");
 const getArgValue = require("../utils/getArgValue");
+const readBudgets = require("../utils/readBudget");
 
 function add() {
   const description = getArgValue("--description");
   const amount = getArgValue("--amount");
+  const category = getArgValue("--category");
 
   if (!description) {
     console.log("Description is required");
@@ -37,8 +39,30 @@ function add() {
     date: new Date().toISOString().split("T")[0],
     description,
     amount: numericAmount,
+    category,
   };
+  const budgets = readBudgets();
 
+  const currentMonth = new Date(newExpense.date).getMonth() + 1;
+
+  const budget = budgets.find((budget) => {
+    return budget.month === currentMonth;
+  });
+
+  if (budget) {
+    const totalForMonth = expenses
+      .filter((expense) => {
+        const expenseMonth = new Date(expense.date).getMonth() + 1;
+        return expenseMonth === currentMonth;
+      })
+      .reduce((sum, expense) => {
+        return sum + expense.amount;
+      }, 0);
+
+    if (totalForMonth > budget.amount) {
+      console.log("Warning: Budget exceeded!");
+    }
+  }
   expenses.push(newExpense);
 
   saveExpenses(expenses);
