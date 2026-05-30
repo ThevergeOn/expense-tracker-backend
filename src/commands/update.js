@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
 
 async function update() {
@@ -14,25 +14,25 @@ async function update() {
   const description = getArgValue("--description");
   const amount = getArgValue("--amount");
 
-  const checkResult = await pool.query(
-    "SELECT * FROM expenses WHERE id = $1",
-    [numericId]
-  );
+  const expense = await prisma.expense.findUnique({
+    where: { id: numericId },
+  });
 
-  if (checkResult.rows.length === 0) {
+  if (!expense) {
     console.log("Expense not found");
     return;
   }
 
-  const expense = checkResult.rows[0];
-
   const newDescription = description ? description : expense.description;
   const newAmount = amount ? Number(amount) : expense.amount;
 
-  await pool.query(
-    "UPDATE expenses SET description = $1, amount = $2 WHERE id = $3",
-    [newDescription, newAmount, numericId]
-  );
+  await prisma.expense.update({
+    where: { id: numericId },
+    data: {
+      description: newDescription,
+      amount: newAmount,
+    },
+  });
 
   console.log("Expense updated successfully");
 }

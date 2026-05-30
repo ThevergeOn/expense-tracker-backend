@@ -1,20 +1,13 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
 
 async function list() {
   const category = getArgValue("--category");
 
-  let result;
-  if (category) {
-    result = await pool.query(
-      "SELECT * FROM expenses WHERE category = $1 ORDER BY id",
-      [category]
-    );
-  } else {
-    result = await pool.query("SELECT * FROM expenses ORDER BY id");
-  }
-
-  const expenses = result.rows;
+  const expenses = await prisma.expense.findMany({
+    where: category ? { category: category } : undefined,
+    orderBy: { id: "asc" },
+  });
 
   if (expenses.length === 0) {
     console.log("No expenses found");

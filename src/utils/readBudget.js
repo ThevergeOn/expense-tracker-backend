@@ -1,8 +1,10 @@
-const pool = require("../../db");
+const prisma = require("./prisma");
 
 async function readBudgets() {
-  const result = await pool.query("SELECT * FROM budgets ORDER BY month");
-  return result.rows;
+  const budgets = await prisma.budget.findMany({
+    orderBy: { month: "asc" },
+  });
+  return budgets;
 }
 
 module.exports = readBudgets;

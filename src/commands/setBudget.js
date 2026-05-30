@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
 
 async function setBudget() {
@@ -28,10 +28,11 @@ async function setBudget() {
     return;
   }
 
-  await pool.query(
-    "INSERT INTO budgets (month, amount) VALUES ($1, $2) ON CONFLICT (month) DO UPDATE SET amount = $2",
-    [numericMonth, numericAmount]
-  );
+  await prisma.budget.upsert({
+    where: { month: numericMonth },
+    update: { amount: numericAmount },
+    create: { month: numericMonth, amount: numericAmount },
+  });
 
   console.log("Budget saved successfully");
 }

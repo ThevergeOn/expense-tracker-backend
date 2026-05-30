@@ -1,9 +1,11 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 
 async function summary() {
-  const result = await pool.query("SELECT SUM(amount) as total FROM expenses");
+  const result = await prisma.expense.aggregate({
+    _sum: { amount: true },
+  });
 
-  const total = parseFloat(result.rows[0].total) || 0;
+  const total = Number(result._sum.amount) || 0;
 
   console.log(`Total expenses: $${total}`);
 }

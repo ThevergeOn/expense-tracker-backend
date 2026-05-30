@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
 
 async function deleteExpense() {
@@ -11,17 +11,18 @@ async function deleteExpense() {
 
   const numericId = Number(id);
 
-  const checkResult = await pool.query(
-    "SELECT * FROM expenses WHERE id = $1",
-    [numericId]
-  );
+  const expense = await prisma.expense.findUnique({
+    where: { id: numericId },
+  });
 
-  if (checkResult.rows.length === 0) {
+  if (!expense) {
     console.log("Expense not found");
     return;
   }
 
-  await pool.query("DELETE FROM expenses WHERE id = $1", [numericId]);
+  await prisma.expense.delete({
+    where: { id: numericId },
+  });
 
   console.log("Expense deleted successfully");
 }

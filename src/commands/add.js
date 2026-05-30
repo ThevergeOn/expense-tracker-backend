@@ -1,11 +1,10 @@
-const pool = require("../../db");
+const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
-const readBudgets = require("../utils/readBudget");
 
 async function add() {
   const description = getArgValue("--description");
   const amount = getArgValue("--amount");
-  const category = getArgValue("--category");
+  const category = getArgValue("--category") || "General";
 
   if (!description) {
     console.log("Description is required");
@@ -29,33 +28,44 @@ async function add() {
     return;
   }
 
-  const date = new Date().toISOString().split("T")[0];
-  const currentMonth = new Date(date).getMonth() + 1;
+  const date = new Date();
+  const currentMonth = date.getMonth() + 1;
 
-  const budgets = await readBudgets();
-
-  const budget = budgets.find((budget) => {
-    return budget.month === currentMonth;
+  const budget = await prisma.budget.findFirst({
+    where: { month: currentMonth },
   });
 
   if (budget) {
-    const expensesResult = await pool.query(
-      "SELECT SUM(amount) as total FROM expenses WHERE EXTRACT(MONTH FROM date) = $1",
-      [currentMonth]
-    );
-    const totalForMonth = parseFloat(expensesResult.rows[0].total) || 0;
+    const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
-    if (totalForMonth + numericAmount > budget.amount) {
+    const result = await prisma.expense.aggregate({
+      _sum: { amount: true },
+      where: {
+        date: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+    });
+
+    const totalForMonth = Number(result._sum.amount) || 0;
+
+    if (totalForMonth + numericAmount > Number(budget.amount)) {
       console.log("Warning: Budget exceeded!");
     }
   }
 
-  const result = await pool.query(
-    "INSERT INTO expenses (date, description, amount, category) VALUES ($1, $2, $3, $4) RETURNING id",
-    [date, description, numericAmount, category]
-  );
+  const expense = await prisma.expense.create({
+    data: {
+      date: date,
+      description: description,
+      amount: numericAmount,
+      category: category,
+    },
+  });
 
-  console.log(`Expense added successfully (ID: ${result.rows[0].id})`);
+  console.log(`Expense added successfully (ID: ${expense.id})`);
 }
 
 module.exports = add;
