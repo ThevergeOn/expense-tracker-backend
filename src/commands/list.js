@@ -4,24 +4,27 @@ const getArgValue = require("../utils/getArgValue");
 async function list() {
   const category = getArgValue("--category");
 
-  const expenses = await prisma.expense.findMany({
-    where: category ? { category: category } : undefined,
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      type: "expense",
+      ...(category ? { category } : {}),
+    },
     orderBy: { id: "asc" },
   });
 
-  if (expenses.length === 0) {
+  if (transactions.length === 0) {
     console.log("No expenses found");
     return;
   }
 
   console.log("ID  Date        Category  Description  Amount");
 
-  expenses.forEach((expense) => {
-    const dateStr = expense.date instanceof Date
-      ? expense.date.toISOString().split("T")[0]
-      : expense.date;
+  transactions.forEach((t) => {
+    const dateStr = t.date instanceof Date
+      ? t.date.toISOString().split("T")[0]
+      : t.date;
     console.log(
-      `${expense.id}   ${dateStr}  ${expense.category}  ${expense.description}  $${expense.amount}`,
+      `${t.id}   ${dateStr}  ${t.category}  ${t.title}  $${t.amount}`,
     );
   });
 }

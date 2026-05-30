@@ -11,25 +11,25 @@ async function update() {
 
   const numericId = Number(id);
 
-  const description = getArgValue("--description");
+  const title = getArgValue("--description") || getArgValue("--title");
   const amount = getArgValue("--amount");
 
-  const expense = await prisma.expense.findUnique({
+  const transaction = await prisma.transaction.findUnique({
     where: { id: numericId },
   });
 
-  if (!expense) {
+  if (!transaction) {
     console.log("Expense not found");
     return;
   }
 
-  const newDescription = description ? description : expense.description;
-  const newAmount = amount ? Number(amount) : expense.amount;
+  const newTitle = title ? title : transaction.title;
+  const newAmount = amount ? Number(amount) : transaction.amount;
 
-  await prisma.expense.update({
+  await prisma.transaction.update({
     where: { id: numericId },
     data: {
-      description: newDescription,
+      title: newTitle,
       amount: newAmount,
     },
   });

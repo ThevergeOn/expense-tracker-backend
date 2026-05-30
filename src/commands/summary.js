@@ -1,8 +1,9 @@
 const prisma = require("../utils/prisma");
 
 async function summary() {
-  const result = await prisma.expense.aggregate({
+  const result = await prisma.transaction.aggregate({
     _sum: { amount: true },
+    where: { type: "expense" },
   });
 
   const total = Number(result._sum.amount) || 0;

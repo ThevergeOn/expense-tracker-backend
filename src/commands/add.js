@@ -2,11 +2,11 @@ const prisma = require("../utils/prisma");
 const getArgValue = require("../utils/getArgValue");
 
 async function add() {
-  const description = getArgValue("--description");
+  const title = getArgValue("--description") || getArgValue("--title");
   const amount = getArgValue("--amount");
-  const category = getArgValue("--category") || "General";
+  const category = getArgValue("--category") || "other";
 
-  if (!description) {
+  if (!title) {
     console.log("Description is required");
     return;
   }
@@ -39,9 +39,10 @@ async function add() {
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
     const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
-    const result = await prisma.expense.aggregate({
+    const result = await prisma.transaction.aggregate({
       _sum: { amount: true },
       where: {
+        type: "expense",
         date: {
           gte: startOfMonth,
           lte: endOfMonth,
@@ -56,16 +57,17 @@ async function add() {
     }
   }
 
-  const expense = await prisma.expense.create({
+  const transaction = await prisma.transaction.create({
     data: {
       date: date,
-      description: description,
+      title: title,
       amount: numericAmount,
       category: category,
+      type: "expense",
     },
   });
 
-  console.log(`Expense added successfully (ID: ${expense.id})`);
+  console.log(`Expense added successfully (ID: ${transaction.id})`);
 }
 
 module.exports = add;

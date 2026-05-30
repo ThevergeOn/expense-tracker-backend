@@ -6,14 +6,18 @@ datasource db {
   provider = "postgresql"
 }
 
-model Expense {
-  id          Int      @id @default(autoincrement())
-  date        DateTime @db.Date
-  description String
-  amount      Decimal
-  category    String   @default("General")
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String   @default("other")
+  amount    Decimal
+  date      DateTime @db.Date
+  type      String   @default("expense")
+  icon      String?
+  iconColor String?
+  iconBg    String?
 
-  @@map("expenses")
+  @@map("transactions")
 }
 
 model Budget {

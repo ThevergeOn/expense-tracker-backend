@@ -1,10 +1,11 @@
 const prisma = require("./prisma");
 
 async function readExpenses() {
-  const expenses = await prisma.expense.findMany({
+  const transactions = await prisma.transaction.findMany({
+    where: { type: "expense" },
     orderBy: { id: "asc" },
   });
-  return expenses;
+  return transactions;
 }
 
 module.exports = readExpenses;

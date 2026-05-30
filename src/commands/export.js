@@ -15,7 +15,7 @@ async function exportCSV() {
     const dateStr = expense.date instanceof Date
       ? expense.date.toISOString().split("T")[0]
       : expense.date;
-    return `${expense.id},${dateStr},${expense.category},${expense.description},${expense.amount}`;
+    return `${expense.id},${dateStr},${expense.category},${expense.title},${expense.amount}`;
   });
 
   const csv = [header, ...rows].join("\n");

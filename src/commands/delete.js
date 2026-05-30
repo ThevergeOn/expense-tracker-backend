@@ -11,16 +11,16 @@ async function deleteExpense() {
 
   const numericId = Number(id);
 
-  const expense = await prisma.expense.findUnique({
+  const transaction = await prisma.transaction.findUnique({
     where: { id: numericId },
   });
 
-  if (!expense) {
+  if (!transaction) {
     console.log("Expense not found");
     return;
   }
 
-  await prisma.expense.delete({
+  await prisma.transaction.delete({
     where: { id: numericId },
   });
 
