@@ -189,7 +189,13 @@ const swaggerOptions = {
         get: {
           summary: "Get all transactions",
           tags: ["Transactions"],
-          parameters: [{ in: "query", name: "type", schema: { type: "string", enum: ["all", "income", "expense"] }, description: "Filter by transaction type" }],
+          parameters: [
+            { in: "query", name: "type", schema: { type: "string", enum: ["all", "income", "expense"] }, description: "Filter by transaction type" },
+            { in: "query", name: "startDate", schema: { type: "string", format: "date" }, description: "Start date (ISO format)" },
+            { in: "query", name: "endDate", schema: { type: "string", format: "date" }, description: "End date (ISO format)" },
+            { in: "query", name: "period", schema: { type: "string", enum: ["daily", "weekly", "monthly", "yearly"] }, description: "Filter by period" },
+            { in: "query", name: "date", schema: { type: "string", format: "date" }, description: "Base date for period calculation" },
+          ],
           responses: {
             200: { description: "List of transactions", content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Transaction" } } } } },
             500: { description: "Server error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
@@ -237,10 +243,32 @@ const swaggerOptions = {
           },
         },
       },
+      "/api/analytics": {
+        get: {
+          summary: "Get analytics with date filtering",
+          tags: ["Analytics"],
+          parameters: [
+            { in: "query", name: "startDate", schema: { type: "string", format: "date" }, description: "Start date (ISO format)" },
+            { in: "query", name: "endDate", schema: { type: "string", format: "date" }, description: "End date (ISO format)" },
+            { in: "query", name: "period", schema: { type: "string", enum: ["daily", "weekly", "monthly", "yearly"] }, description: "Filter by period" },
+            { in: "query", name: "date", schema: { type: "string", format: "date" }, description: "Base date for period calculation" },
+          ],
+          responses: {
+            200: { description: "Analytics data with transactions", content: { "application/json": { schema: { type: "object", properties: { totalIncome: { type: "number" }, totalExpenses: { type: "number" }, balance: { type: "number" }, transactionCount: { type: "integer" }, transactions: { type: "array", items: { $ref: "#/components/schemas/Transaction" } } } } } } },
+            500: { description: "Server error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
       "/api/analytics/monthly": {
         get: {
-          summary: "Get monthly analytics",
+          summary: "Get monthly analytics breakdown",
           tags: ["Analytics"],
+          parameters: [
+            { in: "query", name: "startDate", schema: { type: "string", format: "date" }, description: "Start date (ISO format)" },
+            { in: "query", name: "endDate", schema: { type: "string", format: "date" }, description: "End date (ISO format)" },
+            { in: "query", name: "period", schema: { type: "string", enum: ["daily", "weekly", "monthly", "yearly"] }, description: "Filter by period" },
+            { in: "query", name: "date", schema: { type: "string", format: "date" }, description: "Base date for period calculation" },
+          ],
           responses: {
             200: { description: "Monthly analytics data", content: { "application/json": { schema: { $ref: "#/components/schemas/Analytics" } } } },
             500: { description: "Server error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },

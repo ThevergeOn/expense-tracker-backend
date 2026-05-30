@@ -24,6 +24,36 @@ swaggerRouter.use("/", swaggerUi.serve);
 swaggerRouter.get("/", swaggerUi.setup(swaggerSpec));
 app.use("/api-docs", swaggerRouter);
 
+// Helper function to calculate date range based on period
+function getDateRange(period, date) {
+  const baseDate = date ? new Date(date) : new Date();
+  let startDate, endDate;
+
+  switch (period) {
+    case "daily":
+      startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+      endDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + 1);
+      break;
+    case "weekly":
+      const dayOfWeek = baseDate.getDay();
+      startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - dayOfWeek);
+      endDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + (7 - dayOfWeek));
+      break;
+    case "monthly":
+      startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+      endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0, 23, 59, 59);
+      break;
+    case "yearly":
+      startDate = new Date(baseDate.getFullYear(), 0, 1);
+      endDate = new Date(baseDate.getFullYear(), 11, 31, 23, 59, 59);
+      break;
+    default:
+      return null;
+  }
+
+  return { startDate, endDate };
+}
+
 // Categories data
 const categories = [
   { id: "groceries", name: "Groceries", icon: "cart", color: "#22C55E", bgColor: "#DCFCE7" },
@@ -51,11 +81,33 @@ app.get("/api/categories", (req, res) => {
 // GET /api/transactions
 app.get("/api/transactions", async (req, res) => {
   try {
-    const { type } = req.query;
-    const where = type && type !== "all" ? { type } : undefined;
+    const { type, startDate, endDate, period, date } = req.query;
+
+    // Build where clause
+    const where = {};
+
+    // Type filter
+    if (type && type !== "all") {
+      where.type = type;
+    }
+
+    // Date filtering
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    } else if (period) {
+      const range = getDateRange(period, date);
+      if (range) {
+        where.date = {
+          gte: range.startDate,
+          lte: range.endDate,
+        };
+      }
+    }
 
     const transactions = await prisma.transaction.findMany({
-      where,
+      where: Object.keys(where).length > 0 ? where : undefined,
       orderBy: { date: "desc" },
     });
 
@@ -201,10 +253,94 @@ app.delete("/api/transactions", async (req, res) => {
   }
 });
 
+// GET /api/analytics - with date filtering
+app.get("/api/analytics", async (req, res) => {
+  try {
+    const { startDate, endDate, period, date } = req.query;
+
+    // Build where clause for date filtering
+    const where = {};
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    } else if (period) {
+      const range = getDateRange(period, date);
+      if (range) {
+        where.date = {
+          gte: range.startDate,
+          lte: range.endDate,
+        };
+      }
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
+      orderBy: { date: "desc" },
+    });
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+
+    transactions.forEach((t) => {
+      const amount = Number(t.amount);
+      if (t.type === "income") {
+        totalIncome += amount;
+      } else {
+        totalExpenses += amount;
+      }
+    });
+
+    const formattedTransactions = transactions.map((t) => ({
+      id: String(t.id),
+      title: t.title,
+      category: t.category,
+      amount: Number(t.amount),
+      date: t.date.toISOString().split("T")[0],
+      type: t.type,
+      icon: t.icon,
+      iconColor: t.iconColor,
+      iconBg: t.iconBg,
+    }));
+
+    res.json({
+      totalIncome,
+      totalExpenses,
+      balance: totalIncome - totalExpenses,
+      transactionCount: transactions.length,
+      transactions: formattedTransactions,
+    });
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
+  }
+});
+
 // GET /api/analytics/monthly
 app.get("/api/analytics/monthly", async (req, res) => {
   try {
+    const { startDate, endDate, period, date } = req.query;
+
+    // Build where clause for date filtering
+    const where = {};
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    } else if (period) {
+      const range = getDateRange(period, date);
+      if (range) {
+        where.date = {
+          gte: range.startDate,
+          lte: range.endDate,
+        };
+      }
+    }
+
     const transactions = await prisma.transaction.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
       orderBy: { date: "asc" },
     });
 
