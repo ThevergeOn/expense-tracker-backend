@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const morgan = require("morgan");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 const prisma = require("./utils/prisma");
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan(":date[iso] :method :url :status :response-time ms - :res[content-length]"));
 
 // Swagger documentation
 app.get("/swagger.json", (req, res) => {
